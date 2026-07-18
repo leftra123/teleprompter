@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -13,6 +13,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme';
 import { Script } from '../types';
 import { Settings } from '../lib/settings';
+import { CameraStageHandle, RecordedVideo, formatClock } from '../lib/cameraTypes';
+import CameraStage from '../components/CameraStage';
+import PreviewModal from '../components/PreviewModal';
 
 interface Props {
   script: Script | null;
@@ -25,6 +28,8 @@ interface Props {
 
 const SPEED_MIN = 1;
 const SPEED_MAX = 10;
+
+type RecState = 'idle' | 'countdown' | 'recording';
 
 /** Velocidad en píxeles/segundo, proporcional al tamaño de fuente
  *  (misma velocidad de LECTURA aunque cambie la fuente). */
@@ -45,11 +50,19 @@ export default function PrompterScreen({
   const insets = useSafeAreaInsets();
   const { height: screenH } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
+  const cameraRef = useRef<CameraStageHandle>(null);
   const offsetRef = useRef(0);
   const contentHRef = useRef(0);
   const viewportHRef = useRef(0);
   const [playing, setPlaying] = useState(false);
   const [atEnd, setAtEnd] = useState(false);
+  const [recState, setRecState] = useState<RecState>('idle');
+  const [countdown, setCountdown] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
+  const [recorded, setRecorded] = useState<RecordedVideo | null>(null);
+  const [cameraStatus, setCameraStatus] = useState<'ready' | 'denied' | 'unavailable' | null>(
+    null,
+  );
 
   const { fontSize, align, mirrorH, mirrorV, areaPct, bgOpacity, bgLight, guide, speed } =
     settings;
@@ -89,6 +102,61 @@ export default function PrompterScreen({
     setAtEnd(false);
   }, [script?.id]);
 
+  // Cuenta regresiva → inicia grabación al llegar a 0.
+  useEffect(() => {
+    if (recState !== 'countdown') return;
+    if (countdown <= 0) {
+      beginRecording();
+      return;
+    }
+    const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recState, countdown]);
+
+  // Cronómetro durante la grabación.
+  useEffect(() => {
+    if (recState !== 'recording') return;
+    const started = Date.now();
+    setElapsed(0);
+    const t = setInterval(() => setElapsed((Date.now() - started) / 1000), 500);
+    return () => clearInterval(t);
+  }, [recState]);
+
+  const beginRecording = useCallback(() => {
+    const ok = cameraRef.current?.startRecording() ?? false;
+    if (!ok) {
+      setRecState('idle');
+      return;
+    }
+    setRecState('recording');
+    // El guión vuelve al inicio y arranca solo.
+    offsetRef.current = 0;
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+    setAtEnd(false);
+    if (script) setPlaying(true);
+  }, [script]);
+
+  const stopRecording = useCallback(async () => {
+    setRecState('idle');
+    setPlaying(false);
+    const video = await cameraRef.current?.stopRecording();
+    if (video) setRecorded(video);
+  }, []);
+
+  const onRecordPress = useCallback(() => {
+    if (recState === 'recording') {
+      stopRecording();
+    } else if (recState === 'countdown') {
+      setRecState('idle'); // cancelar cuenta regresiva
+    } else if (settings.countdownOn) {
+      setCountdown(settings.countdownSecs);
+      setRecState('countdown');
+    } else {
+      beginRecording();
+    }
+  }, [recState, settings.countdownOn, settings.countdownSecs, beginRecording, stopRecording]);
+
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     offsetRef.current = e.nativeEvent.contentOffset.y;
     setAtEnd(false);
@@ -105,11 +173,20 @@ export default function PrompterScreen({
   const textColor = bgLight ? '#111111' : '#FFFFFF';
   const bgBase = bgLight ? '255,255,255' : '0,0,0';
   const areaBg = `rgba(${bgBase},${(bgOpacity / 100).toFixed(2)})`;
+  const recording = recState === 'recording';
 
   return (
     <View style={styles.root}>
-      {/* En F3 esta zona pasa a ser la vista de cámara. */}
       <View style={styles.stage}>
+        {/* Cámara de fondo (web: getUserMedia; nativo: llega en F5). */}
+        <CameraStage
+          ref={cameraRef}
+          facing={settings.facing}
+          quality={settings.quality}
+          mirrorPreview={settings.mirrorFront}
+          onStatus={setCameraStatus}
+        />
+
         <View
           style={[
             styles.textArea,
@@ -165,6 +242,21 @@ export default function PrompterScreen({
           )}
         </View>
 
+        {/* Cronómetro */}
+        {recording && settings.chronometer && (
+          <View pointerEvents="none" style={[styles.chrono, { top: insets.top + 8 }]}>
+            <View style={styles.chronoDot} />
+            <Text style={styles.chronoText}>{formatClock(elapsed)}</Text>
+          </View>
+        )}
+
+        {/* Cuenta regresiva */}
+        {recState === 'countdown' && (
+          <View style={styles.countdownOverlay} pointerEvents="none">
+            <Text style={styles.countdownText}>{countdown}</Text>
+          </View>
+        )}
+
         <Pressable
           style={[styles.editFab, { top: insets.top + 8 }]}
           onPress={onEditScript}
@@ -186,6 +278,21 @@ export default function PrompterScreen({
           </Pressable>
         </View>
 
+        {/* Botón de grabación */}
+        <Pressable
+          style={[styles.recButton, recording && styles.recButtonActive]}
+          onPress={onRecordPress}
+          disabled={cameraStatus !== 'ready' && recState === 'idle'}
+        >
+          <View
+            style={[
+              styles.recInner,
+              recording ? styles.recInnerStop : null,
+              cameraStatus !== 'ready' && !recording ? { opacity: 0.35 } : null,
+            ]}
+          />
+        </Pressable>
+
         <View style={styles.speedGroup}>
           <Pressable
             style={styles.speedButton}
@@ -206,12 +313,11 @@ export default function PrompterScreen({
           >
             <Text style={styles.speedButtonText}>+</Text>
           </Pressable>
-        </View>
-
-        <View style={styles.speedIndicator}>
-          <Text style={styles.speedIndicatorText}>vel. {speed}</Text>
+          <Text style={styles.speedIndicatorText}>v{speed}</Text>
         </View>
       </View>
+
+      <PreviewModal video={recorded} onClose={() => setRecorded(null)} />
     </View>
   );
 }
@@ -247,6 +353,26 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     opacity: 0.55,
   },
+  chrono: {
+    position: 'absolute',
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+  chronoDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: '#FF3B30' },
+  chronoText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  countdownOverlay: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  countdownText: { color: '#FFFFFF', fontSize: 140, fontWeight: '800' },
   editFab: {
     position: 'absolute',
     right: 16,
@@ -262,34 +388,50 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingTop: 10,
     backgroundColor: colors.surface,
   },
-  sideGroup: { flexDirection: 'row', gap: 18 },
-  controlButton: { alignItems: 'center', minWidth: 52 },
+  sideGroup: { flexDirection: 'row', gap: 10 },
+  controlButton: { alignItems: 'center', minWidth: 46 },
   controlIcon: { color: colors.text, fontSize: 22 },
-  controlLabel: { color: colors.textDim, fontSize: 12, marginTop: 2 },
-  speedGroup: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  controlLabel: { color: colors.textDim, fontSize: 11, marginTop: 2 },
+  recButton: {
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recButtonActive: { borderColor: '#FF3B30' },
+  recInner: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#FF3B30',
+  },
+  recInnerStop: { width: 26, height: 26, borderRadius: 6 },
+  speedGroup: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   speedButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: colors.surfaceLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  speedButtonText: { color: colors.text, fontSize: 24, fontWeight: '600' },
+  speedButtonText: { color: colors.text, fontSize: 20, fontWeight: '600' },
   playButton: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: colors.accentDark,
     alignItems: 'center',
     justifyContent: 'center',
   },
   playButtonActive: { backgroundColor: colors.accent },
-  playButtonText: { color: colors.text, fontSize: 22 },
-  speedIndicator: { minWidth: 52, alignItems: 'center' },
-  speedIndicatorText: { color: colors.textDim, fontSize: 13 },
+  playButtonText: { color: colors.text, fontSize: 17 },
+  speedIndicatorText: { color: colors.textDim, fontSize: 11, width: 22 },
 });

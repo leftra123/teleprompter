@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CameraFacing, CameraQuality } from './cameraTypes';
 
 export interface Settings {
   /** Tamaño de fuente del prompter (pt). */
@@ -19,6 +20,18 @@ export interface Settings {
   guide: boolean;
   /** Velocidad de desplazamiento (1–10). */
   speed: number;
+  /** Cámara frontal o trasera. */
+  facing: CameraFacing;
+  /** Calidad de grabación. */
+  quality: CameraQuality;
+  /** Espejar la vista previa de la cámara frontal. */
+  mirrorFront: boolean;
+  /** Cuenta regresiva antes de grabar. */
+  countdownOn: boolean;
+  /** Segundos de la cuenta regresiva (3–10). */
+  countdownSecs: number;
+  /** Mostrar cronómetro durante la grabación. */
+  chronometer: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -31,6 +44,12 @@ export const DEFAULT_SETTINGS: Settings = {
   bgLight: false,
   guide: false,
   speed: 4,
+  facing: 'front',
+  quality: '720p',
+  mirrorFront: true,
+  countdownOn: true,
+  countdownSecs: 5,
+  chronometer: true,
 };
 
 const SETTINGS_KEY = 'teleprompter.settings.v1';

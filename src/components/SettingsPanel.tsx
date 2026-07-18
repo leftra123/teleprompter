@@ -13,7 +13,7 @@ interface Props {
   onClose: () => void;
 }
 
-type Tab = 'texto' | 'area';
+type Tab = 'texto' | 'area' | 'camara' | 'tiempo';
 
 export default function SettingsPanel({ visible, settings, onChange, onClose }: Props) {
   const insets = useSafeAreaInsets();
@@ -29,7 +29,9 @@ export default function SettingsPanel({ visible, settings, onChange, onClose }: 
           <Segmented<Tab>
             options={[
               { value: 'texto', label: 'Texto' },
-              { value: 'area', label: 'Área de texto' },
+              { value: 'area', label: 'Área' },
+              { value: 'camara', label: 'Cámara' },
+              { value: 'tiempo', label: 'Tiempo' },
             ]}
             value={tab}
             onChange={setTab}
@@ -77,7 +79,7 @@ export default function SettingsPanel({ visible, settings, onChange, onClose }: 
               />
             </Row>
           </>
-        ) : (
+        ) : tab === 'area' ? (
           <>
             <Row label="Alto del área" value={`${settings.areaPct}%`}>
               <Slider
@@ -115,6 +117,77 @@ export default function SettingsPanel({ visible, settings, onChange, onClose }: 
               <Switch
                 value={settings.guide}
                 onValueChange={(v) => onChange({ guide: v })}
+                trackColor={{ true: colors.accentDark, false: colors.surfaceLight }}
+                thumbColor="#FFFFFF"
+              />
+            </View>
+          </>
+        ) : tab === 'camara' ? (
+          <>
+            <Row label="Cámara">
+              <Segmented
+                options={[
+                  { value: 'front', label: 'Frontal' },
+                  { value: 'back', label: 'Trasera' },
+                ]}
+                value={settings.facing}
+                onChange={(v) => onChange({ facing: v })}
+              />
+            </Row>
+
+            <Row label="Calidad">
+              <Segmented
+                options={[
+                  { value: '720p', label: '720p HD' },
+                  { value: '1080p', label: '1080p Full HD' },
+                ]}
+                value={settings.quality}
+                onChange={(v) => onChange({ quality: v })}
+              />
+            </Row>
+
+            <View style={styles.switchRow}>
+              <Text style={styles.rowLabel}>Espejo cámara frontal</Text>
+              <Switch
+                value={settings.mirrorFront}
+                onValueChange={(v) => onChange({ mirrorFront: v })}
+                trackColor={{ true: colors.accentDark, false: colors.surfaceLight }}
+                thumbColor="#FFFFFF"
+              />
+            </View>
+            <Text style={styles.hint}>
+              El espejo afecta solo la vista previa; el video se graba normal.
+            </Text>
+          </>
+        ) : (
+          <>
+            <View style={styles.switchRow}>
+              <Text style={styles.rowLabel}>Cuenta regresiva antes de grabar</Text>
+              <Switch
+                value={settings.countdownOn}
+                onValueChange={(v) => onChange({ countdownOn: v })}
+                trackColor={{ true: colors.accentDark, false: colors.surfaceLight }}
+                thumbColor="#FFFFFF"
+              />
+            </View>
+
+            {settings.countdownOn && (
+              <Row label="Segundos" value={`${settings.countdownSecs}s`}>
+                <Slider
+                  value={settings.countdownSecs}
+                  min={3}
+                  max={10}
+                  step={1}
+                  onChange={(v) => onChange({ countdownSecs: v })}
+                />
+              </Row>
+            )}
+
+            <View style={styles.switchRow}>
+              <Text style={styles.rowLabel}>Cronómetro al grabar</Text>
+              <Switch
+                value={settings.chronometer}
+                onValueChange={(v) => onChange({ chronometer: v })}
                 trackColor={{ true: colors.accentDark, false: colors.surfaceLight }}
                 thumbColor="#FFFFFF"
               />
@@ -177,4 +250,5 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 8,
   },
+  hint: { color: colors.textDim, fontSize: 12, marginTop: 2, marginBottom: 8 },
 });

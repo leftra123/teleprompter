@@ -29,6 +29,6 @@ npm run build     # expo export -p web + parche PWA → dist/
 
 - **F1** ✅ Esqueleto: prompter con auto-scroll básico, guiones con guardado local, editor.
 - **F2** ✅ Prompter profesional: scroll suave (rAF) con pausa al final, espejo H/V, fuente y alineación, área de texto con opacidad y fondo negro/blanco, guía de lectura, ajustes persistentes.
-- **F3** Cámara frontal/trasera + grabación con cuenta regresiva y cronómetro.
+- **F3** ✅ Cámara y grabación (web): getUserMedia + MediaRecorder, frontal/trasera, 720p/1080p, espejo de vista previa, cuenta regresiva, cronómetro, guardar/compartir a Fotos.
 - **F4** Pulido: exportar/importar guiones, ajustes persistentes, rendimiento.
 - **F5** Publicación en tiendas (EAS Build).
