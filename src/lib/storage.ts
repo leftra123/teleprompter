@@ -8,7 +8,7 @@ const WELCOME_SCRIPT = `Bienvenido a tu teleprompter.
 
 Esta app es 100% gratuita: sin cuentas, sin límites de caracteres y sin suscripciones. Tus guiones se guardan solo en este teléfono.
 
-Toca "Guiones" para crear tu primer guión, o el lápiz para editar este. En la próxima versión llegará el desplazamiento automático con velocidad ajustable, y después la cámara para grabarte mientras lees.
+Toca "Guiones" para crear tu primer guión, o el lápiz para editar este. Con el botón de play el texto avanza solo, y en "Ajustes" puedes cambiar tamaño de letra, alineación, espejo, área de texto y guía de lectura. Pronto: cámara para grabarte mientras lees.
 
 Escribe con frases cortas y claras: se leen mejor en pantalla.`;
 

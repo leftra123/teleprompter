@@ -28,7 +28,7 @@ npm run build     # expo export -p web + parche PWA → dist/
 ## Hoja de ruta
 
 - **F1** ✅ Esqueleto: prompter con auto-scroll básico, guiones con guardado local, editor.
-- **F2** Scroll profesional (gestos, espejo H/V, fuente, alineación, área de texto, transparencia, guía).
+- **F2** ✅ Prompter profesional: scroll suave (rAF) con pausa al final, espejo H/V, fuente y alineación, área de texto con opacidad y fondo negro/blanco, guía de lectura, ajustes persistentes.
 - **F3** Cámara frontal/trasera + grabación con cuenta regresiva y cronómetro.
 - **F4** Pulido: exportar/importar guiones, ajustes persistentes, rendimiento.
 - **F5** Publicación en tiendas (EAS Build).

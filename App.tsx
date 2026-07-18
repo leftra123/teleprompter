@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import PrompterScreen from './src/screens/PrompterScreen';
 import ScriptsScreen from './src/screens/ScriptsScreen';
 import EditorScreen from './src/screens/EditorScreen';
+import SettingsPanel from './src/components/SettingsPanel';
 import {
   createScript,
   duplicateScript,
@@ -13,6 +14,12 @@ import {
   saveScripts,
   setLastScriptId,
 } from './src/lib/storage';
+import {
+  DEFAULT_SETTINGS,
+  Settings,
+  loadSettings,
+  saveSettings,
+} from './src/lib/settings';
 import { Script } from './src/types';
 import { colors } from './src/theme';
 
@@ -20,20 +27,34 @@ export default function App() {
   const [scripts, setScripts] = useState<Script[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showScripts, setShowScripts] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [loaded, setLoaded] = useState(false);
 
   // Carga inicial desde almacenamiento local.
   useEffect(() => {
     (async () => {
-      const stored = await loadScripts();
-      const lastId = await getLastScriptId();
+      const [stored, lastId, storedSettings] = await Promise.all([
+        loadScripts(),
+        getLastScriptId(),
+        loadSettings(),
+      ]);
       setScripts(stored);
       setSelectedId(
         stored.find((s) => s.id === lastId)?.id ?? stored[0]?.id ?? null,
       );
+      setSettings(storedSettings);
       setLoaded(true);
     })();
+  }, []);
+
+  const changeSettings = useCallback((patch: Partial<Settings>) => {
+    setSettings((prev) => {
+      const next = { ...prev, ...patch };
+      saveSettings(next); // fire-and-forget
+      return next;
+    });
   }, []);
 
   const persist = useCallback((next: Script[]) => {
@@ -98,8 +119,18 @@ export default function App() {
       <StatusBar style="light" />
       <PrompterScreen
         script={selected}
+        settings={settings}
+        onChangeSettings={changeSettings}
         onOpenScripts={() => setShowScripts(true)}
+        onOpenSettings={() => setShowSettings(true)}
         onEditScript={() => selected && setEditingId(selected.id)}
+      />
+
+      <SettingsPanel
+        visible={showSettings}
+        settings={settings}
+        onChange={changeSettings}
+        onClose={() => setShowSettings(false)}
       />
 
       <Modal visible={showScripts} animationType="slide" onRequestClose={() => setShowScripts(false)}>
