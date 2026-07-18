@@ -20,6 +20,7 @@ import {
   loadSettings,
   saveSettings,
 } from './src/lib/settings';
+import { exportScriptFile, filesSupported, pickTextFiles } from './src/lib/files';
 import { Script } from './src/types';
 import { colors } from './src/theme';
 
@@ -96,6 +97,21 @@ export default function App() {
     [scripts, selectedId, persist],
   );
 
+  const handleExport = useCallback((script: Script) => {
+    exportScriptFile(script.title, script.content);
+  }, []);
+
+  const handleImport = useCallback(async () => {
+    const files = await pickTextFiles();
+    if (files.length === 0) return;
+    const fresh = files.map((f) => createScript(f.name || 'Guión importado', f.content));
+    persist([...fresh, ...scripts]);
+    if (fresh[0]) {
+      setSelectedId(fresh[0].id);
+      setLastScriptId(fresh[0].id);
+    }
+  }, [scripts, persist]);
+
   const handleSave = useCallback(
     (id: string, title: string, content: string) => {
       persist(
@@ -142,6 +158,9 @@ export default function App() {
           onEdit={(s) => setEditingId(s.id)}
           onDuplicate={handleDuplicate}
           onDelete={handleDelete}
+          onExport={handleExport}
+          onImport={handleImport}
+          importSupported={filesSupported}
           onClose={() => setShowScripts(false)}
         />
       </Modal>

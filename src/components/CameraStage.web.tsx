@@ -100,6 +100,18 @@ const CameraStage = forwardRef<CameraStageHandle, CameraStageProps>(function Cam
     };
   }, [facing, quality, retryKey, attachStream, onStatus]);
 
+  // Al girar el teléfono (vertical ↔ horizontal), reabre la cámara con la
+  // orientación nueva — salvo que esté grabando, para no cortar el video.
+  useEffect(() => {
+    const onOrientationChange = () => {
+      const rec = recorderRef.current;
+      if (rec && rec.state === 'recording') return;
+      setTimeout(() => setRetryKey((k) => k + 1), 350);
+    };
+    window.addEventListener('orientationchange', onOrientationChange);
+    return () => window.removeEventListener('orientationchange', onOrientationChange);
+  }, []);
+
   useImperativeHandle(ref, () => ({
     startRecording: () => {
       const stream = streamRef.current;

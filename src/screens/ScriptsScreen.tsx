@@ -19,6 +19,9 @@ interface Props {
   onEdit: (script: Script) => void;
   onDuplicate: (script: Script) => void;
   onDelete: (script: Script) => void;
+  onExport: (script: Script) => void;
+  onImport: () => void;
+  importSupported: boolean;
   onClose: () => void;
 }
 
@@ -39,6 +42,9 @@ export default function ScriptsScreen({
   onEdit,
   onDuplicate,
   onDelete,
+  onExport,
+  onImport,
+  importSupported,
   onClose,
 }: Props) {
   const insets = useSafeAreaInsets();
@@ -63,6 +69,12 @@ export default function ScriptsScreen({
           <Text style={[styles.headerAction, styles.headerActionAccent]}>+ Nuevo</Text>
         </Pressable>
       </View>
+
+      {importSupported && (
+        <Pressable style={styles.importBar} onPress={onImport}>
+          <Text style={styles.importText}>⇪ Importar guiones desde archivos .txt</Text>
+        </Pressable>
+      )}
 
       <FlatList
         data={[...scripts].sort((a, b) => b.updatedAt - a.updatedAt)}
@@ -93,13 +105,16 @@ export default function ScriptsScreen({
                 </Text>
               </View>
               <View style={styles.cardActions}>
-                <Pressable hitSlop={8} onPress={() => onEdit(item)}>
+                <Pressable hitSlop={6} onPress={() => onEdit(item)}>
                   <Text style={styles.cardAction}>✎</Text>
                 </Pressable>
-                <Pressable hitSlop={8} onPress={() => onDuplicate(item)}>
+                <Pressable hitSlop={6} onPress={() => onDuplicate(item)}>
                   <Text style={styles.cardAction}>⧉</Text>
                 </Pressable>
-                <Pressable hitSlop={8} onPress={() => confirmDelete(item)}>
+                <Pressable hitSlop={6} onPress={() => onExport(item)}>
+                  <Text style={styles.cardAction}>⤴</Text>
+                </Pressable>
+                <Pressable hitSlop={6} onPress={() => confirmDelete(item)}>
                   <Text style={[styles.cardAction, styles.cardActionDanger]}>🗑</Text>
                 </Pressable>
               </View>
@@ -123,6 +138,16 @@ const styles = StyleSheet.create({
   headerTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
   headerAction: { color: colors.textDim, fontSize: 16 },
   headerActionAccent: { color: colors.accent, fontWeight: '600' },
+  importBar: {
+    marginHorizontal: 16,
+    marginBottom: 8,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.surfaceLight,
+    alignItems: 'center',
+  },
+  importText: { color: colors.textDim, fontSize: 14 },
   empty: { alignItems: 'center', marginTop: 80, gap: 8 },
   emptyText: { color: colors.text, fontSize: 18, fontWeight: '600' },
   emptyHint: { color: colors.textDim, fontSize: 15 },

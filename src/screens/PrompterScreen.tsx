@@ -14,6 +14,7 @@ import { colors } from '../theme';
 import { Script } from '../types';
 import { Settings } from '../lib/settings';
 import { CameraStageHandle, RecordedVideo, formatClock } from '../lib/cameraTypes';
+import { setKeepAwake } from '../lib/wakeLock';
 import CameraStage from '../components/CameraStage';
 import PreviewModal from '../components/PreviewModal';
 
@@ -122,6 +123,13 @@ export default function PrompterScreen({
     const t = setInterval(() => setElapsed((Date.now() - started) / 1000), 500);
     return () => clearInterval(t);
   }, [recState]);
+
+  // Pantalla siempre encendida mientras el prompter corre o se graba.
+  useEffect(() => {
+    const active = playing || recState !== 'idle';
+    setKeepAwake(active);
+    return () => setKeepAwake(false);
+  }, [playing, recState]);
 
   const beginRecording = useCallback(() => {
     const ok = cameraRef.current?.startRecording() ?? false;

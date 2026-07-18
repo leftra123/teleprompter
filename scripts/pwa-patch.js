@@ -28,6 +28,7 @@ const manifest = {
   short_name: 'Teleprompter',
   start_url: `${BASE}/`,
   display: 'standalone',
+  orientation: 'any',
   background_color: '#000000',
   theme_color: '#000000',
   icons: [{ src: `${BASE}/icon-512.png`, sizes: '512x512', type: 'image/png' }],
