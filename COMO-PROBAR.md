@@ -1,30 +1,35 @@
-# Cómo probar la app en tu iPhone (F1)
+# Cómo probar la app (flujo sin npm en tu Mac)
 
-## Requisitos (una sola vez)
-1. En tu Mac: tener Node.js instalado (`node -v` en Terminal; si no está, descárgalo de https://nodejs.org, versión LTS).
-2. En tu iPhone: instalar **Expo Go** desde el App Store (gratis).
-3. Mac y iPhone conectados a la **misma red Wi-Fi**.
+## Probar en el iPhone — 30 segundos
 
-## Cada vez que quieras probar
-```bash
-cd ~/Documents/01-Proyectos-Dev/personal/teleprompter
-npm install        # solo la primera vez, o cuando cambien dependencias
-npx expo start
+1. Abre en Safari: **https://leftra123.github.io/teleprompter/**
+2. Toca el botón Compartir (cuadrado con flecha) → **Agregar a pantalla de inicio**.
+3. Se instala como app con su propio ícono, pantalla completa y funciona sin conexión una vez cargada. Los guiones se guardan en el teléfono.
+
+Cada vez que se publique una versión nueva, basta abrir la app de nuevo (o recargar) para recibirla — misma URL siempre.
+
+## Cómo funciona el flujo de trabajo
+
+- **Tu Mac** solo guarda el código fuente (esta carpeta). No necesita Node, npm ni ninguna herramienta.
+- **Claude (entorno cloud)** compila, prueba y publica. Tú das órdenes en el chat.
+- **GitHub (leftra123/teleprompter)** guarda el código en `main` y la app publicada en `gh-pages`.
+- **GitHub Pages** sirve la app en la URL de arriba, gratis.
+
 ```
-Aparece un código QR en la terminal. Escanéalo con la cámara del iPhone → se abre en Expo Go.
+Orden en el chat → Claude programa y compila (cloud) → push a GitHub
+       → GitHub Pages actualiza la URL → pruebas en el iPhone
+       → copia del código sincronizada a esta carpeta del Mac
+```
 
-Los cambios de código se reflejan al instante en el teléfono (recarga automática).
+## Estado del proyecto
 
-## Qué incluye F1
-- Prompter de pantalla completa (fondo negro, texto grande) con desplazamiento automático básico: play/pausa y velocidad 1–10.
-- Lista de guiones: crear, seleccionar, editar, duplicar, eliminar. Sin límite de caracteres.
-- Editor con guardado automático (todo local en el teléfono).
-- Guión de bienvenida precargado la primera vez.
+- **F1** ✅ Prompter con auto-scroll básico (play/pausa, velocidad 1–10), guiones ilimitados con guardado local, editor con autoguardado. Publicado como PWA.
+- **F2** Scroll profesional, espejo H/V, fuente, alineación, área de texto, transparencia, guía de lectura.
+- **F3** Cámara + grabación (en web usa la cámara del navegador; la calidad plena llegará con la app nativa en F5).
+- **F4** Pulido y exportar/importar guiones.
+- **F5** Apps nativas iOS/Android con EAS Build (compilación también en la nube, sin npm en tu Mac).
 
-## Qué viene después
-- **F2:** scroll profesional (animación nativa, gestos), espejo, fuente/alineación, área de texto y transparencia, guía de lectura.
-- **F3:** cámara frontal/trasera + grabación con cuenta regresiva y cronómetro.
+## Notas
 
-## Si algo falla
-- "Unable to connect": revisa que Mac y iPhone estén en la misma Wi-Fi, o corre `npx expo start --tunnel`.
-- Errores raros tras actualizar: borra caché con `npx expo start -c`.
+- El repositorio en GitHub debe seguir **público** para que Pages sea gratis.
+- El token de acceso que generaste expira en 7 días; para publicar después de esa fecha habrá que generar uno nuevo (mismos pasos).
